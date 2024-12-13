@@ -1,0 +1,127 @@
+{{/* Default alert template for email and PagerDuty notifications */}}
+
+{{/* Email Subject Template */}}
+{{ define "email.subject" }}
+{{- template "__subject" . }}
+{{ end }}
+
+{{/* Email Body Template */}}
+{{ define "email.body" }}
+{{- template "__body" . }}
+{{ end }}
+
+{{/* PagerDuty Description Template */}}
+{{ define "pagerduty.description" }}
+{{- template "__description" . }}
+{{ end }}
+
+{{/* Internal Subject Formatting */}}
+{{ define "__subject" }}
+{{- $status := "" }}
+{{- if eq .Status "firing" }}
+  {{- $status = "[FIRING]" }}
+{{- else }}
+  {{- $status = "[RESOLVED]" }}
+{{- end }}
+{{- $severity := index .CommonLabels "severity" | title }}
+{{- $service := index .CommonLabels "service" }}
+{{- $alertname := index .CommonLabels "alertname" }}
+{{- if gt (len .Alerts) 1 }}
+  {{- printf "%s %s: %s - %s (%d alerts)" $status $severity $alertname $service (len .Alerts) }}
+{{- else }}
+  {{- printf "%s %s: %s - %s" $status $severity $alertname $service }}
+{{- end }}
+{{ end }}
+
+{{/* Internal Body Formatting */}}
+{{ define "__body" }}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+    body { font-family: Arial, sans-serif; }
+    .alert { margin: 20px; padding: 15px; border-radius: 5px; }
+    .firing { background-color: #ffe6e6; border: 1px solid #ff9999; }
+    .resolved { background-color: #e6ffe6; border: 1px solid #99ff99; }
+    .metrics { margin: 10px 0; padding: 10px; background-color: #f5f5f5; }
+    .labels { margin: 10px 0; }
+    .runbook { margin: 15px 0; padding: 10px; background-color: #e6f3ff; }
+</style>
+</head>
+<body>
+    <div class="alert {{ .Status }}">
+        <h2>
+            {{- if eq .Status "firing" }}🔥{{ else }}✅{{ end }} 
+            {{- index .CommonLabels "alertname" }}
+        </h2>
+        <p><strong>Status:</strong> {{ .Status | title }}</p>
+        <p><strong>Severity:</strong> {{ index .CommonLabels "severity" | title }}</p>
+        <p><strong>Service:</strong> {{ index .CommonLabels "service" }}</p>
+        <p><strong>Started:</strong> {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}</p>
+        {{- if eq .Status "resolved" }}
+        <p><strong>Resolved:</strong> {{ .EndsAt.Format "2006-01-02 15:04:05 MST" }}</p>
+        {{- end }}
+    </div>
+
+    {{- range .Alerts }}
+    <div class="metrics">
+        <h3>Alert Details</h3>
+        <p><strong>Description:</strong> {{ index .Annotations "description" }}</p>
+        {{- if index .Annotations "summary" }}
+        <p><strong>Summary:</strong> {{ index .Annotations "summary" }}</p>
+        {{- end }}
+        
+        {{- if index .Annotations "value" }}
+        <p><strong>Current Value:</strong> {{ index .Annotations "value" }}</p>
+        {{- end }}
+        
+        {{- if index .Annotations "threshold" }}
+        <p><strong>Threshold:</strong> {{ index .Annotations "threshold" }}</p>
+        {{- end }}
+    </div>
+
+    <div class="labels">
+        <h3>Labels</h3>
+        {{- range $key, $value := .Labels }}
+        <p><strong>{{ $key }}:</strong> {{ $value }}</p>
+        {{- end }}
+    </div>
+
+    {{- if index .Annotations "runbook_url" }}
+    <div class="runbook">
+        <h3>Runbook</h3>
+        <p>For detailed response procedures, please consult the runbook:</p>
+        <p><a href="{{ index .Annotations "runbook_url" }}">View Runbook</a></p>
+    </div>
+    {{- end }}
+    {{- end }}
+
+    <div style="margin-top: 20px;">
+        <p><strong>Dashboard:</strong> <a href="{{ index .CommonAnnotations "dashboard_url" }}">View Dashboard</a></p>
+        <p><strong>Escalation Contact:</strong> {{ index .CommonAnnotations "team" }} Team</p>
+        <p><small>Alert Manager - {{ now.Format "2006-01-02 15:04:05 MST" }}</small></p>
+    </div>
+</body>
+</html>
+{{ end }}
+
+{{/* Internal PagerDuty Description Formatting */}}
+{{ define "__description" }}
+{{- $severity := index .CommonLabels "severity" | title }}
+{{- $service := index .CommonLabels "service" }}
+{{- $alertname := index .CommonLabels "alertname" }}
+{{- $value := index (index .Alerts 0).Annotations "value" }}
+{{- $threshold := index (index .Alerts 0).Annotations "threshold" }}
+[{{ $severity }}] {{ $alertname }} - {{ $service }}
+{{- if and $value $threshold }}
+ | Current: {{ $value }} | Threshold: {{ $threshold }}
+{{- end }}
+{{- with index (index .Alerts 0).Annotations "description" }}
+ | {{ . }}
+{{- end }}
+{{- with index .CommonAnnotations "runbook_url" }}
+ | Runbook: {{ . }}
+{{- end }}
+{{- printf " | Alerts: %d" (len .Alerts) }}
+{{ end }}
