@@ -1,0 +1,49 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: spec-management-api-hpa
+  namespace: spec-management-prod
+  labels:
+    app: spec-management-api
+    env: production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: spec-management-api
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    # CPU-based scaling
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    # Memory-based scaling
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    # Scale up behavior
+    scaleUp:
+      # Wait 60s before scaling up to prevent thrashing
+      stabilizationWindowSeconds: 60
+      policies:
+        # Add up to 2 pods every 60 seconds
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+    # Scale down behavior
+    scaleDown:
+      # Wait 300s (5min) before scaling down to prevent thrashing
+      stabilizationWindowSeconds: 300
+      policies:
+        # Remove 1 pod every 60 seconds
+        - type: Pods
+          value: 1
+          periodSeconds: 60
