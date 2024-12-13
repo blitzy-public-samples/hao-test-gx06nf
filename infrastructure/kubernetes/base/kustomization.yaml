@@ -1,0 +1,73 @@
+# Base Kustomization configuration for Specification Management API
+# Version: v1
+# Kustomize Version: v4.5+
+# Purpose: Define foundational Kubernetes resources with enhanced security and monitoring
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Define isolated namespace for the application
+namespace: spec-management
+
+# Common labels for all resources
+commonLabels:
+  app: spec-management-api
+  managed-by: kustomize
+  environment: base
+  component: api
+  version: v1
+
+# Common annotations for monitoring and security
+commonAnnotations:
+  # Prometheus monitoring configuration
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8000"
+  prometheus.io/path: "/metrics"
+  
+  # Security and compliance annotations
+  security.cloud.google.com/managed: "true"
+  security.cloud.google.com/encryption: "required"
+  
+  # Backup configuration
+  backup.cloud.google.com/enabled: "true"
+
+# Core Kubernetes resources
+resources:
+  # Namespace definition with security policies
+  - namespace.yaml
+  # Service account with minimal permissions
+  - service-account.yaml
+  # Network policies for pod isolation
+  - network-policy.yaml
+  # Pod security policies for enhanced container security
+  - pod-security-policy.yaml
+
+# ConfigMap generation with versioning
+configMapGenerator:
+  - name: app-config
+    files:
+      - configmap.yaml
+    options:
+      disableNameSuffixHash: false
+      labels:
+        config-type: application
+
+# Secret generation with encryption and rotation
+secretGenerator:
+  - name: app-secrets
+    files:
+      - secrets.yaml
+    options:
+      disableNameSuffixHash: false
+      labels:
+        secret-type: application
+      annotations:
+        # Cloud KMS encryption configuration
+        encryption.cloud.google.com/key: projects/spec-management/locations/global/keyRings/app-keys/cryptoKeys/app-secret
+        # Automatic secret rotation policy
+        secret.cloud.google.com/rotation-schedule: "7d"
+        secret.cloud.google.com/next-rotation: "2024-01-27T00:00:00Z"
+
+# Additional Kustomize configurations
+configurations:
+  - kustomize-config.yaml
