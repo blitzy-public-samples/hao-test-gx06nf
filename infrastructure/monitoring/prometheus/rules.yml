@@ -1,0 +1,131 @@
+# Prometheus Recording and Alerting Rules
+# Version: 1.0
+# Prometheus Version: 2.45.0
+# Purpose: Define monitoring thresholds and alert conditions for the specification management API
+
+groups:
+  # API SLO Monitoring Rules
+  - name: api_slo_rules
+    rules:
+      # Record 95th percentile of API request duration
+      - record: api:request_duration:p95
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+        labels:
+          service: spec-api
+
+      # Alert on high API latency (>500ms)
+      - alert: APIHighLatency
+        expr: api:request_duration:p95 > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: spec-api
+        annotations:
+          summary: API response time exceeds SLO
+          description: 95th percentile of API response time is above 500ms threshold
+          runbook_url: https://wiki.example.com/runbooks/high-latency
+
+  # System Availability Rules
+  - name: availability_rules
+    rules:
+      # Record system availability ratio
+      - record: api:availability:ratio
+        expr: sum(rate(http_requests_total{code=~"2..|3.."}[5m])) / sum(rate(http_requests_total[5m]))
+        labels:
+          service: spec-api
+
+      # Alert on low availability (<99.9%)
+      - alert: LowAvailability
+        expr: api:availability:ratio < 0.999
+        for: 5m
+        labels:
+          severity: critical
+          service: spec-api
+        annotations:
+          summary: System availability below SLO
+          description: Service availability has dropped below 99.9% threshold
+          runbook_url: https://wiki.example.com/runbooks/low-availability
+
+  # Authentication Success Rate Rules
+  - name: auth_rules
+    rules:
+      # Record authentication success ratio
+      - record: auth:success:ratio
+        expr: sum(rate(auth_attempts_total{status="success"}[5m])) / sum(rate(auth_attempts_total[5m]))
+        labels:
+          service: spec-api
+
+      # Alert on high authentication failure rate
+      - alert: AuthFailureRate
+        expr: auth:success:ratio < 0.999
+        for: 5m
+        labels:
+          severity: critical
+          service: spec-api
+        annotations:
+          summary: High authentication failure rate
+          description: Authentication success rate has dropped below 99.9% threshold
+          runbook_url: https://wiki.example.com/runbooks/auth-failures
+
+  # Resource Utilization Rules
+  - name: resource_rules
+    rules:
+      # Record API instance CPU usage
+      - record: api:cpu:usage_ratio
+        expr: sum(rate(process_cpu_seconds_total{job="spec-api"}[5m])) by (instance)
+        labels:
+          service: spec-api
+
+      # Alert on high CPU usage
+      - alert: HighCPUUsage
+        expr: api:cpu:usage_ratio > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          service: spec-api
+        annotations:
+          summary: High CPU utilization
+          description: CPU usage has exceeded 80% for 10 minutes
+          runbook_url: https://wiki.example.com/runbooks/high-cpu
+
+  # Database Connection Rules
+  - name: database_rules
+    rules:
+      # Record database connection pool utilization
+      - record: db:connections:utilization
+        expr: sum(postgresql_pool_active_connections) / sum(postgresql_pool_max_connections)
+        labels:
+          service: spec-api
+
+      # Alert on high connection pool usage
+      - alert: HighConnectionPoolUsage
+        expr: db:connections:utilization > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: spec-api
+        annotations:
+          summary: High database connection pool usage
+          description: Database connection pool utilization above 80%
+          runbook_url: https://wiki.example.com/runbooks/db-connections
+
+  # Rate Limiting Rules
+  - name: rate_limit_rules
+    rules:
+      # Record rate limiting ratio
+      - record: api:rate_limit:ratio
+        expr: sum(rate(http_requests_total{status="429"}[5m])) / sum(rate(http_requests_total[5m]))
+        labels:
+          service: spec-api
+
+      # Alert on high rate limiting
+      - alert: HighRateLimiting
+        expr: api:rate_limit:ratio > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: spec-api
+        annotations:
+          summary: High rate of throttled requests
+          description: More than 10% of requests are being rate limited
+          runbook_url: https://wiki.example.com/runbooks/rate-limiting
