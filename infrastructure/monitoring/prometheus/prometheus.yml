@@ -1,0 +1,90 @@
+# Prometheus configuration file v2.45.0
+# Configures monitoring for specification management API system
+
+global:
+  # Default scrape interval for all jobs
+  scrape_interval: 15s
+  # Default evaluation interval for rules
+  evaluation_interval: 15s
+  # Scrape timeout for all jobs
+  scrape_timeout: 10s
+
+# Load recording and alerting rules
+rule_files:
+  - "rules.yml"  # Contains SLO recording and alerting rules
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - "alertmanager:9093"  # Alertmanager service endpoint
+
+# Scrape configurations
+scrape_configs:
+  # Main API service monitoring
+  - job_name: "spec-api"
+    metrics_path: "/metrics"
+    scrape_interval: 10s  # More frequent scraping for API metrics
+    static_configs:
+      - targets:
+        - "api:8000"  # API service endpoint
+    metric_relabel_configs:
+      # Keep only HTTP duration metrics for SLO monitoring
+      - source_labels: ["__name__"]
+        regex: "http_request_duration_seconds.*"
+        action: "keep"
+    relabel_configs:
+      # Add service label
+      - source_labels: ["job"]
+        target_label: "service"
+        replacement: "specification-api"
+      # Add environment label
+      - source_labels: ["job"]
+        target_label: "environment"
+        replacement: "production"
+
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets:
+        - "localhost:9090"  # Prometheus itself
+
+  # Authentication monitoring
+  - job_name: "auth-metrics"
+    metrics_path: "/metrics"
+    scrape_interval: 10s
+    static_configs:
+      - targets:
+        - "api:8000"  # API service endpoint for auth metrics
+    metric_relabel_configs:
+      # Keep only authentication-related metrics
+      - source_labels: ["__name__"]
+        regex: "auth_.*"
+        action: "keep"
+
+  # System uptime monitoring
+  - job_name: "uptime"
+    metrics_path: "/health"
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+        - "api:8000"  # API health endpoint
+    relabel_configs:
+      - source_labels: ["job"]
+        target_label: "component"
+        replacement: "api-service"
+
+# Remote write configuration for long-term storage (optional)
+# remote_write:
+#   - url: "http://remote-storage:9201/write"
+#     queue_config:
+#       capacity: 500
+#       max_samples_per_send: 100
+#       batch_send_deadline: 5s
+
+# Remote read configuration for long-term queries (optional)
+# remote_read:
+#   - url: "http://remote-storage:9201/read"
+#     read_recent: true
