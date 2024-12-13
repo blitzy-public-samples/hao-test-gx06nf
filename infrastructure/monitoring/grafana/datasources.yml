@@ -1,0 +1,46 @@
+# Grafana datasources configuration v9.5.0
+# Configures Prometheus as the primary datasource for monitoring API response times,
+# system availability and authentication success rates
+
+apiVersion: 1
+
+# Remove any existing Prometheus datasource to ensure clean configuration
+deleteDatasources:
+  - name: Prometheus
+    orgId: 1
+
+# Configure datasources
+datasources:
+  - name: Prometheus
+    type: prometheus
+    # Use proxy access mode for secure monitoring of authentication success rate
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    version: 1
+    editable: false
+    
+    # JSON data configuration
+    jsonData:
+      # 15s interval for accurate monitoring of API response times (95% within 500ms target)
+      timeInterval: "15s"
+      # 30s timeout for reliable system availability tracking (99.9% uptime target)
+      queryTimeout: "30s"
+      # Use POST method for more reliable data transmission
+      httpMethod: "POST"
+      
+      # Configure exemplar trace ID destinations for distributed tracing
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: tempo
+      
+      # Add header name for multi-tenant monitoring
+      httpHeaderName1: "X-Scope-OrgID"
+    
+    # Secure JSON data configuration
+    secureJsonData:
+      httpHeaderValue1: "monitoring"
+    
+    # Disable basic auth as we're using header-based auth
+    basicAuth: false
+    withCredentials: false
