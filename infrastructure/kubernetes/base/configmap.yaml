@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  labels:
+    app: spec-management-api
+    component: api
+    part-of: specification-management
+    managed-by: kustomize
+data:
+  # Flask Application Configuration
+  FLASK_APP: src.main:app
+  FLASK_ENV: production
+  API_PORT: "8000"
+  API_HOST: "0.0.0.0"
+  LOG_LEVEL: INFO
+
+  # CORS Configuration
+  CORS_ORIGINS: "*"
+
+  # Database Connection Pool Settings
+  DB_POOL_MIN_SIZE: "10"
+  DB_POOL_MAX_SIZE: "100"
+  DB_POOL_TIMEOUT: "30"
+
+  # Redis Cache TTL Configuration (in seconds)
+  REDIS_TTL_PROJECT: "300"  # 5 minutes
+  REDIS_TTL_SPEC: "120"     # 2 minutes
+  REDIS_TTL_ITEMS: "120"    # 2 minutes
+  REDIS_TTL_USER: "900"     # 15 minutes
+
+  # Application Limits and Constraints
+  RATE_LIMIT_PER_HOUR: "1000"
+  MAX_ITEMS_PER_SPEC: "10"
+
+  # Health Check and Monitoring Endpoints
+  HEALTH_CHECK_PATH: /health
+  METRICS_PATH: /metrics
+  READINESS_PATH: /ready
+  LIVENESS_PATH: /live
