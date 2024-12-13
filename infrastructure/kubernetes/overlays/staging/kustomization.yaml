@@ -1,0 +1,101 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Specify staging namespace for isolation
+namespace: staging
+
+# Reference base configuration
+bases:
+  - ../../base
+
+# Add staging-specific labels
+commonLabels:
+  environment: staging
+  app: spec-management-api
+  tier: backend
+  managed-by: kustomize
+
+# Define staging-specific resources
+resources:
+  - deployment.yaml
+  - service.yaml
+  - hpa.yaml
+
+# Apply strategic merge patches
+patchesStrategicMerge:
+  - deployment.yaml
+
+# Configure container image for staging
+images:
+  - name: gcr.io/project-id/api
+    newTag: staging
+
+# Set replica count for staging environment
+replicas:
+  - name: api-deployment
+    count: 2
+
+# Generate staging-specific ConfigMap
+configMapGenerator:
+  - name: staging-config
+    literals:
+      - ENVIRONMENT=staging
+      - LOG_LEVEL=debug
+      # Database configuration
+      - DB_MAX_CONNECTIONS=50
+      - DB_MIN_CONNECTIONS=5
+      - DB_CONNECTION_TIMEOUT=30
+      # Cache configuration
+      - REDIS_MAX_CONNECTIONS=20
+      - REDIS_TIMEOUT=5
+      # API configuration
+      - API_RATE_LIMIT=1000
+      - API_TIMEOUT=30
+      # Authentication configuration
+      - JWT_EXPIRY=86400
+      - AUTH_ATTEMPTS_MAX=5
+      # Resource limits
+      - MEMORY_REQUEST=2Gi
+      - CPU_REQUEST=1
+      - MEMORY_LIMIT=4Gi
+      - CPU_LIMIT=2
+
+# Resource quotas for staging namespace
+resources:
+  - |
+    apiVersion: v1
+    kind: ResourceQuota
+    metadata:
+      name: staging-quota
+    spec:
+      hard:
+        requests.cpu: "4"
+        requests.memory: 8Gi
+        limits.cpu: "8"
+        limits.memory: 16Gi
+        pods: "10"
+
+# Network policies for staging environment
+resources:
+  - |
+    apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: staging-network-policy
+    spec:
+      podSelector:
+        matchLabels:
+          app: spec-management-api
+      policyTypes:
+        - Ingress
+        - Egress
+      ingress:
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  name: staging
+      egress:
+        - to:
+            - namespaceSelector:
+                matchLabels:
+                  name: staging
