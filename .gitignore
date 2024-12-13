@@ -1,0 +1,95 @@
+#----------------------
+# Environment files containing sensitive configuration
+.env
+.env.*
+!.env.example
+
+# Encryption and security files
+*.key
+*.pem
+*.crt
+*.p12
+secrets/
+
+# SSL/TLS certificates (except documentation)
+infrastructure/nginx/ssl/*
+!infrastructure/nginx/ssl/README.md
+
+# Infrastructure & Deployment
+#--------------------------
+# Terraform files
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+.terraform.lock.hcl
+
+# Kubernetes
+kubeconfig
+
+# Container and deployment
+*.tar
+*.docker
+
+# Monitoring data
+prometheus/data/
+grafana/data/
+
+# Development & IDE
+#-----------------
+# JetBrains
+.idea/
+
+# VS Code
+.vscode/
+
+# Vim
+*.swp
+
+# macOS
+.DS_Store
+
+# Sublime Text
+*.sublime-*
+
+# Eclipse
+.project
+.settings/
+.classpath
+
+# Build & Dependencies
+#--------------------
+# Node.js
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Python
+*.pyc
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Logs & Runtime
+#--------------
+# Log files
+*.log
+logs/
+
+# Test and coverage
+.coverage
+coverage.xml
+
+# Runtime files
+*.pid
+*.sock
+tmp/
+
+# Database
+*.dump
+*.sql
