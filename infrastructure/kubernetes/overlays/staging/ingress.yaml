@@ -1,0 +1,58 @@
+# Kubernetes Ingress configuration for staging environment
+# External library versions:
+# - kubernetes-ingress: v1.24+
+# - cert-manager: v1.8+
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: spec-management-api-ingress
+  namespace: staging
+  labels:
+    app: spec-management-api
+    environment: staging
+    component: ingress
+    managed-by: kustomize
+  annotations:
+    # Ingress controller configuration
+    kubernetes.io/ingress.class: "nginx"
+    
+    # TLS/Certificate management
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+    
+    # SSL/TLS enforcement
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # Request size and timeout configurations
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    
+    # Security headers configuration
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+    
+    # Monitoring and rate limiting
+    nginx.ingress.kubernetes.io/enable-access-log: "true"
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+
+spec:
+  tls:
+    - hosts:
+        - staging-api.spec-management.example.com
+      secretName: spec-management-api-tls-staging
+  rules:
+    - host: staging-api.spec-management.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: spec-management-api
+                port:
+                  number: 80
