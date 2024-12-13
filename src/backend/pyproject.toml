@@ -1,0 +1,63 @@
+[tool.poetry]
+name = "specification-api"
+version = "1.0.0"
+description = "REST API backend system for managing hierarchical specifications within user-owned projects"
+authors = ["Development Team"]
+readme = "README.md"
+packages = [
+    { include = "src" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+flask = "^2.0.0"                    # Web framework for REST API implementation
+sqlalchemy = "^1.4.0"               # ORM for PostgreSQL database interactions
+flask-restful = "^0.3.9"            # REST API extension for Flask
+psycopg2-binary = "^2.9.0"         # PostgreSQL adapter for Python
+flask-jwt-extended = "^4.0.0"       # JWT token handling for authentication
+google-auth = "^2.0.0"              # Google Cloud User Store authentication
+flask-caching = "^1.10.0"           # Response caching with Redis integration
+marshmallow = "^3.0.0"              # Data serialization and validation
+alembic = "^1.7.0"                  # Database migration management
+redis = "^6.0.0"                    # Redis client for caching layer
+gunicorn = "^20.1.0"                # Production WSGI HTTP server
+prometheus-client = "^0.14.0"       # Metrics collection and monitoring
+python-json-logger = "^2.0.0"       # Structured JSON logging
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.0.0"                   # Code formatting for consistency
+pylint = "^2.0.0"                   # Code linting for quality
+pytest = "^6.0.0"                   # Unit testing framework
+pytest-cov = "^2.12.0"              # Test coverage reporting
+pytest-mock = "^3.6.0"              # Mocking for unit tests
+pytest-asyncio = "^0.18.0"          # Async test support
+safety = "^2.0.0"                   # Dependency vulnerability checking
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ["py38"]
+include = "src"
+exclude = "migrations"
+
+[tool.pylint]
+max-line-length = 100
+disable = [
+    "C0111",  # Missing docstring
+    "R0903",  # Too few public methods
+    "C0103"   # Invalid name
+]
+ignore = ["migrations"]
+output-format = "colorized"
+reports = "no"
+score = "yes"
+
+[tool.pytest]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--verbose --cov=src --cov-report=term-missing --cov-report=xml"
