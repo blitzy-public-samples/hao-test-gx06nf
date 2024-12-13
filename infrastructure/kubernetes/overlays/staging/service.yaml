@@ -1,0 +1,29 @@
+# Service configuration for spec-management-api in staging environment
+# Version: v1
+# Purpose: Internal load balancing and service discovery for API pods
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: spec-management-api
+  namespace: staging
+  labels:
+    app: spec-management-api
+    environment: staging
+
+spec:
+  # Using ClusterIP for internal access within the Kubernetes cluster
+  type: ClusterIP
+  
+  # Port configuration mapping external port 80 to container port 8000
+  ports:
+    - port: 80  # Service port exposed internally
+      targetPort: 8000  # Container port where the API listens
+      protocol: TCP
+      name: http  # Named port for better service discovery
+  
+  # Selector to match pods with corresponding labels
+  selector:
+    app: spec-management-api
+    environment: staging
