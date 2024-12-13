@@ -1,0 +1,249 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: ['main', 'develop']
+    paths: ['src/backend/**']
+    tags: ['v*.*.*']
+  pull_request:
+    branches: ['main', 'develop']
+    paths: ['src/backend/**']
+    types: ['opened', 'synchronize', 'reopened']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  id-token: write
+
+env:
+  PYTHON_VERSION: '3.8'
+  POETRY_VERSION: '1.0.0'
+  DOCKER_REGISTRY: 'gcr.io'
+  POSTGRES_VERSION: '14-alpine'
+  REDIS_VERSION: '6-alpine'
+  MAX_TIMEOUT: '30'
+
+jobs:
+  code_quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: 'src/backend/pyproject.toml'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version ${{ env.POETRY_VERSION }}
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/poetry_cache
+          key: ${{ runner.os }}-poetry-${{ hashFiles('src/backend/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install dependencies
+        working-directory: src/backend
+        run: poetry install --no-interaction --no-root
+
+      - name: Run Black formatter check
+        working-directory: src/backend
+        run: poetry run black --check .
+
+      - name: Run Pylint
+        working-directory: src/backend
+        run: poetry run pylint --rcfile=pyproject.toml **/*.py
+
+      - name: Run security checks
+        working-directory: src/backend
+        run: poetry run safety check
+
+      - name: Check licenses
+        working-directory: src/backend
+        run: poetry run pip-licenses --format=json > license-report.json
+
+  test:
+    name: Unit and Integration Tests
+    needs: code_quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      POSTGRES_DB: test_db
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+      REDIS_URL: redis://localhost:6379/0
+      PYTHONPATH: src/backend
+      POETRY_VIRTUALENVS_CREATE: 'true'
+      POETRY_CACHE_DIR: /tmp/poetry_cache
+
+    services:
+      postgres:
+        image: postgres:${{ env.POSTGRES_VERSION }}
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:${{ env.REDIS_VERSION }}
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version ${{ env.POETRY_VERSION }}
+          poetry config virtualenvs.create true
+
+      - name: Install dependencies
+        working-directory: src/backend
+        run: poetry install --no-interaction --no-root
+
+      - name: Run tests with coverage
+        working-directory: src/backend
+        run: |
+          poetry run pytest \
+            --cov=. \
+            --cov-report=xml \
+            --cov-report=html \
+            --junitxml=test-results.xml \
+            -v tests/
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-reports
+          path: |
+            src/backend/coverage.xml
+            src/backend/htmlcov
+            src/backend/test-results.xml
+
+  build:
+    name: Build and Push Image
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: _json_key
+          password: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: src/backend
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ github.workflow }}
+          cache-to: type=gha,mode=max,scope=${{ github.workflow }}
+          build-args: |
+            PYTHON_VERSION=${{ env.PYTHON_VERSION }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.meta.outputs.tags }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  notify:
+    name: Send Notifications
+    needs: [code_quality, test, build]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Check workflow status
+        id: check
+        run: |
+          if [[ "${{ needs.code_quality.result }}" == "failure" || \
+                "${{ needs.test.result }}" == "failure" || \
+                "${{ needs.build.result }}" == "failure" ]]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify on failure
+        if: steps.check.outputs.status == 'failure'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify on success
+        if: steps.check.outputs.status == 'success'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,commit,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
