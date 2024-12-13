@@ -1,0 +1,48 @@
+# Global ownership - fallback for unmatched files
+* @project-leads
+
+# API Implementation
+src/backend/src/api/** @api-team @backend-leads
+
+# Database Layer
+src/backend/src/db/** @database-team @backend-leads
+
+# Business Services
+src/backend/src/services/** @services-team @backend-leads
+
+# Configuration Management
+src/backend/src/config/** @platform-team @backend-leads
+
+# Core Functionality
+src/backend/src/core/** @platform-team @backend-leads
+
+# Test Suite
+src/backend/tests/** @qa-team @backend-leads
+
+# Infrastructure Code
+infrastructure/** @devops-team @platform-leads
+
+# CI/CD Workflows
+.github/workflows/** @devops-team @platform-leads
+
+# Security-Critical Components
+# Authentication and Authorization
+src/backend/src/api/auth/** @security-team @backend-leads
+
+# Security Middleware
+src/backend/src/api/middleware/security.py @security-team @backend-leads
+
+# Rate Limiting
+src/backend/src/api/middleware/rate_limiting.py @security-team @backend-leads
+
+# Database Encryption
+src/backend/src/db/encryption/** @security-team @database-team
+
+# This CODEOWNERS file enforces the following review requirements:
+# - Minimum 2 approvals required for all changes
+# - Code owner review is mandatory
+# - Stale reviews are automatically dismissed
+# - Up-to-date branches required before merging
+# - Security team review required for security-critical components
+# - Branch protection enforced with signed commits
+# - Force pushes and deletions prohibited
