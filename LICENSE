@@ -1,0 +1,64 @@
+Enterprise Software License Agreement
+Version 1.0, January 2024
+
+Copyright (c) 2024 Specification Management System
+
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+1. Definitions
+   "License" shall mean the terms and conditions for use, reproduction, and distribution as defined in this document.
+   
+   "Licensor" shall mean the copyright owner or entity authorized by the copyright owner that is granting the License.
+   
+   "Legal Entity" shall mean the union of the acting entity and all other entities that control, are controlled by, or are under common control with that entity.
+   
+   "Software" shall mean the copyrightable works licensed under this License, specifically the Specification Management System REST API backend service.
+
+2. Grant of License
+   Subject to the terms and conditions of this License, the Licensor hereby grants to you a perpetual, worldwide, non-exclusive, no-charge, royalty-free license to use, reproduce, modify, display, perform, sublicense, and distribute the Software.
+
+3. Patent Grant
+   Subject to the terms and conditions of this License, each Contributor hereby grants to you a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable (except as stated in this section) patent license to make, have made, use, offer to sell, sell, import, and otherwise transfer the Software. This patent license applies only to those patent claims licensable by such Contributor that are necessarily infringed by their Contribution(s) alone or by combination of their Contribution(s) with the Software.
+
+4. Enterprise Use Conditions
+   a. You may use the Software within your organization for internal business purposes.
+   b. You may deploy the Software on your own infrastructure or cloud services.
+   c. You may integrate the Software with your existing systems and applications.
+   d. You must maintain all copyright, patent, trademark, and attribution notices.
+
+5. Data Handling and User Privacy
+   a. You must comply with all applicable data protection and privacy laws.
+   b. You must implement appropriate security measures to protect user data.
+   c. You must obtain necessary consents for data collection and processing.
+   d. You must honor user rights regarding their personal data.
+
+6. Distribution Requirements
+   a. Redistributions in source code form must retain this License text.
+   b. Redistributions in binary form must reproduce this License in documentation.
+   c. Neither the names of the Licensor nor the names of contributors may be used to endorse or promote products derived from this Software without specific prior written permission.
+
+7. Export Compliance
+   This Software may be subject to U.S. export control laws and regulations. You agree to:
+   a. Comply with all applicable export control laws and regulations.
+   b. Obtain any necessary export licenses or permits.
+   c. Not export the Software to prohibited countries or entities.
+   d. Not use the Software for prohibited end uses.
+
+8. Disclaimer of Warranty
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+9. Limitation of Liability
+   IN NO EVENT AND UNDER NO LEGAL THEORY, WHETHER IN TORT (INCLUDING NEGLIGENCE), CONTRACT, OR OTHERWISE, SHALL ANY CONTRIBUTOR BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES OF ANY CHARACTER ARISING AS A RESULT OF THIS LICENSE OR OUT OF THE USE OR INABILITY TO USE THE SOFTWARE.
+
+10. Termination
+    This License and the rights granted hereunder will terminate automatically if you fail to comply with its terms and conditions. All sublicenses to the Software which are properly granted shall survive any termination of this License.
+
+11. Acceptance
+    You are not required to accept this License since you have not signed it. However, nothing else grants you permission to use, modify or distribute the Software or its derivative works. These actions are prohibited by law if you do not accept this License.
+
+12. Jurisdiction and Governing Law
+    This License shall be governed by and construed in accordance with the laws of the United States of America. Any legal suit, action, or proceeding arising out of or related to this License shall be instituted exclusively in the federal courts of the United States of America.
+
+For licensing inquiries or permissions beyond the scope of this license, please contact: legal@specmanagementsystem.com
+
+SPDX-License-Identifier: Custom-Enterprise-1.0
