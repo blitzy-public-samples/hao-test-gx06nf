@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: spec-management-api
+  namespace: spec-management-prod
+  labels:
+    app: spec-management-api
+    env: production
+  annotations:
+    # Enable Google Cloud NEG for ingress integration
+    cloud.google.com/neg: '{"ingress": true}'
+    # Configure Google Cloud backend config for advanced load balancing settings
+    cloud.google.com/backend-config: '{"default": "spec-management-api-backend-config"}'
+spec:
+  # Use ClusterIP type since external access will be handled by ingress
+  type: ClusterIP
+  ports:
+    # Map external port 80 to container port 8000
+    - port: 80
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  # Select pods with matching app label
+  selector:
+    app: spec-management-api
